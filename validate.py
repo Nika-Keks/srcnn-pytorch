@@ -71,7 +71,7 @@ def sr(model, lr_filename, sr_filename):
         image_tensor = image_tensor.view(1, -1, y.size[1], y.size[0]).to(device)
         
         # The Y channel data is super-divided and converted to PIL format.
-        out = model(image_tensor)
+        out = model(image_tensor) 
         out_y = out[0].cpu().numpy()
         out_y *= 255.0
         out_y = out_y.clip(0, 255)

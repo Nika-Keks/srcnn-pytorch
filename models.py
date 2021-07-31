@@ -45,7 +45,7 @@ class SRCNN(nn.Module):
         # The model does not need to fill the edges during the training process, 
         # and needs to fill the edges during the testing mode.
         if mode == "train":
-            padding = False
+            padding = True
         elif mode == "eval":
             padding = True
         else:
@@ -55,7 +55,7 @@ class SRCNN(nn.Module):
         self.features = nn.Sequential(
             nn.Conv2d(1, 64, 9, 1, 0 if not padding else 4),
             nn.ReLU(True)
-        )
+        )   
 
         # Non-linear mapping layer.
         self.map = nn.Sequential(

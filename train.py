@@ -12,11 +12,13 @@
 # limitations under the License.
 # ==============================================================================
 import argparse
+from ast import parse
 import os
 import random
 
 import torch
 import torch.backends.cudnn as cudnn
+from torch.cuda import device_of
 import torch.cuda.amp as amp
 import torch.nn as nn
 import torch.optim as optim
@@ -24,7 +26,7 @@ import torch.utils.data as data
 from torch.utils.tensorboard import SummaryWriter
 
 import models
-from dataset import CustomDataset
+from dataset import CustomImageDataset
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
@@ -54,6 +56,11 @@ parser.add_argument("--model-path", type=str, default="",
                     help="Path to weights.")
 parser.add_argument("--seed", type=int, default=666,
                     help="Seed for initializing training. (Default: 666)")
+parser.add_argument("--lr-folder", type=str, default="LRx2", 
+                    help="Folder with low resolution images")
+parser.add_argument("--gt-folder", type=str, default="GT", 
+                    help="Folder with ground truth")
+
 args = parser.parse_args()
 
 # Set random initialization seed, easy to reproduce.
@@ -63,11 +70,12 @@ print("Random Seed: ", args.seed)
 random.seed(args.seed)
 torch.manual_seed(args.seed)
 cudnn.deterministic = True
+torch.cuda.empty_cache()
 
 # Set the operating device model.
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-dataset = CustomDataset(args.dataroot)
+dataset = CustomImageDataset(args.dataroot, lr_folder=args.lr_folder, gt_folder=args.gt_folder, num_rotation=4)
 dataloader = data.DataLoader(dataset, args.batch_size, True, pin_memory=True)
 
 # Construct SRCNN model.
@@ -106,6 +114,10 @@ writer = SummaryWriter("sample/logs")
 
 
 def main():
+    if not dataset.is_valid():
+        print("=> Dataset is ivalid")
+        return
+
     num_batches = len(dataloader)
     for epoch in range(int(start_epoch), args.epochs):
         for index, data in enumerate(dataloader, 1):
